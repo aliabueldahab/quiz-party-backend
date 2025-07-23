@@ -129,16 +129,23 @@ export const restepassword = async (req:Request , res:Response) =>{
 
 
 export const creatRoom = async (req: AuthRequest, res: Response) => {
-    const userid = req.user?.id;
+  try {
+    const created_by = req.user?.id;
 
-    if (!userid) {
-        return res.status(400).json({ error: "User ID is required" });
+    if (!created_by) {
+      return res.status(400).json({ error: "User ID is required" });
     }
 
-  const [room_code, room_id] = await createRoomGame(userid);
-  
-res.status(200).json({ room_code, room_id, userid });
-}
+    const [room_code, room_id] = await createRoomGame(created_by);
+
+    res.status(200).json({ room_code, room_id, created_by });
+
+  } catch (error) {
+    console.error("Error creating room:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 
 
 export const joinRoom = async(req: AuthRequest, res: Response) => {

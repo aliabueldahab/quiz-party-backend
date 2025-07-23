@@ -34,14 +34,32 @@ export const updatePassword = async (id:any , password:string) => {
     (await dataBaseConnection.getConnection()).execute("UPDATE users SET password = ? WHERE id = ?", [password, id])
 }
 
-export const createRoomGame  = async (created_by:string) => {
+export const createRoomGame = async (created_by: string) => {
+  try {
     const id = uuidv4();
-  const room_code = uuidv4();
-  const created_at = new Date();
-  (await dataBaseConnection.getConnection()).execute('INSERT INTO rooms (id , room_code, created_by, created_at) VALUES (?, ?, ? , ?)',   [ id,room_code, created_by, created_at])
- const shortCode = room_code.substring(0, 10);
-  return [shortCode , id];
-}
+    const room_code = uuidv4();
+    const created_at = new Date();
+      const joinedAt = new Date();
+
+    const conn = await dataBaseConnection.getConnection();
+
+    await conn.execute(
+      'INSERT INTO rooms (id, room_code, created_by, created_at) VALUES (?, ?, ?, ?)',
+      [id, room_code, created_by, created_at]
+    );
+
+await conn.execute(
+  'INSERT INTO room_players (id ,room_id, user_id, joined_at, is_host) VALUES (?, ?, ?, ?, ?)',
+  [id, id, created_by, new Date(), 1]
+);
+    const shortCode = room_code.substring(0, 10);
+    return [shortCode, id];
+
+  } catch (error) {
+    console.error("Error in createRoomGame:", error);
+    throw error;
+  }
+};
 
 export const getRoomByCode = async (room_code: string): Promise<{ id: string } | null> => {
   
