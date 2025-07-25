@@ -52,6 +52,7 @@ await conn.execute(
   'INSERT INTO room_players (id ,room_id, user_id, joined_at, is_host) VALUES (?, ?, ?, ?, ?)',
   [id, id, created_by, new Date(), 1]
 );
+
     const shortCode = room_code.substring(0, 10);
     return [shortCode, id];
 
@@ -59,6 +60,8 @@ await conn.execute(
     console.error("Error in createRoomGame:", error);
     throw error;
   }
+
+
 };
 
 export const getRoomByCode = async (room_code: string): Promise<{ id: string } | null> => {
@@ -89,3 +92,69 @@ export const addUserToRoom = async(userId:string , room_id:string):Promise<void>
 
     
 }
+
+
+export const saveQuestionToRoom = async (
+  question: string,
+  options: string[],
+  correct_answer: string,
+  room_id: string
+): Promise<void> => {
+  const id = uuidv4();
+
+  await (
+    await dataBaseConnection.getConnection()
+  ).execute(
+    `INSERT INTO questions (
+      id,
+      question_text,
+      option_1,
+      option_2,
+      option_3,
+      option_4,
+      correct_answer,
+      room_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      question,
+      options[0],
+      options[1],
+      options[2],
+      options[3],
+      correct_answer,
+      room_id,
+    ]
+  );
+};
+
+
+export const getCorrectAnswerByQuestionId = async (questionId: string): Promise<string> => {
+  const connection = await dataBaseConnection.getConnection();
+  const [rows] = await connection.execute(
+    `SELECT correct_answer FROM questions WHERE id = ?`,
+    [questionId]
+  );
+
+  if (!Array.isArray(rows) || rows.length === 0) {
+    throw new Error("Question not found");
+  }
+
+  return (rows[0] as any).correct_answer;
+};
+
+export const saveAnswerToDB = async (
+  userId: string,
+  questionId: string,
+  selectedAnswer: string,
+  isCorrect: boolean
+): Promise<void> => {
+  const connection = await dataBaseConnection.getConnection();
+  const id = uuidv4();
+
+  await connection.execute(
+    `INSERT INTO answers (id, user_id, question_id, selected_answer, is_correct)
+     VALUES (?, ?, ?, ?, ?)`,
+    [id, userId, questionId, selectedAnswer, isCorrect]
+  );
+};
